@@ -1,10 +1,13 @@
 #include<algorithm>
 #include<vector>
-#include<string>
+#include<cstring>
 #include<iostream>
+#include<fstream>
+#include<cctype>
 #include<unordered_map>
 
 #define MAX_CONSTS 1000
+#define MAX_ID_LEN 50
 
 using namespace std;
 
@@ -29,13 +32,15 @@ typedef struct {
     union {
         char cVal;
         int nVal;
-        string sVal;
+        char *sVal;
     } _;
 } t_const;
 
 // Vetor de constantes lidas
 t_const vConsts[MAX_CONSTS];
 int nNumConsts = 0;
+
+ifstream inputFile;
 
 // Caractere lido
 char nextChar = '\x20';
@@ -67,7 +72,7 @@ int searchName(string name) {
 
     // Verifica se o identificador já está na tabela
     auto it = identifierTable.find(name);
-    if (it != identifierTable.end()) {
+    if(it != identifierTable.end()) {
         // Retorna o token secundário já existente
         return it->second;
     } else {
@@ -79,7 +84,7 @@ int searchName(string name) {
 
 // Funções para inclusões de constantes de cada tipo. Retornam a posição em que foram inseridas
 int addCharConst(char c) {
-    if (nNumConsts >= MAX_CONSTS) {
+    if(nNumConsts >= MAX_CONSTS) {
         cerr << "Erro: Excedido o limite máximo de constantes." << endl;
         return -1; // Retorna -1 em caso de erro
     }
@@ -89,7 +94,7 @@ int addCharConst(char c) {
 }
 
 int addIntConst(int n) {
-    if (nNumConsts >= MAX_CONSTS) {
+    if(nNumConsts >= MAX_CONSTS) {
         cerr << "Erro: Excedido o limite máximo de constantes." << endl;
         return -1; // Retorna -1 em caso de erro
     }
@@ -98,19 +103,19 @@ int addIntConst(int n) {
     return nNumConsts++;
 }
 
-int addStringConst(string s) {
-    if (nNumConsts >= MAX_CONSTS) {
+int addStringConst(char *s) {
+    if(nNumConsts >= MAX_CONSTS) {
         cerr << "Erro: Excedido o limite máximo de constantes." << endl;
         return -1; // Retorna -1 em caso de erro
     }
     vConsts[nNumConsts].type = 2; // 2 para string
-    vConsts[nNumConsts]._.sVal = s;
+    strcpy(vConsts[nNumConsts]._.sVal, s);
     return nNumConsts++;
 }
 
 // Funções para a recuperação do valor de uma constante a partir de sua posição
 char getCharConst(int n) {
-    if (n > nNumConsts) {
+    if(n > nNumConsts) {
         cerr << "Erro: Excedido o número de constantes." << endl;
         return -1; // Retorna -1 em caso de erro
     }
@@ -118,7 +123,7 @@ char getCharConst(int n) {
 }
 
 int getIntConst(int n) {
-    if (n > nNumConsts) {
+    if(n > nNumConsts) {
         cerr << "Erro: Excedido o número de constantes." << endl;
         return -1; // Retorna -1 em caso de erro
     }
@@ -126,22 +131,66 @@ int getIntConst(int n) {
 }
 
 string getStringConst(int n) {
-    if (n > nNumConsts) {
+    if(n > nNumConsts) {
         cerr << "Erro: Excedido o número de constantes." << endl;
         return ""; // Retorna -1 em caso de erro
     }
     return vConsts[n]._.sVal;
 }
 
+// Função para inicializar a leitura do arquivo
+void openLexerFile(const string& filename) {
+    inputFile.open(filename);
+    if(!inputFile) {
+        cerr << "Erro ao abrir o arquivo: " << filename << endl;
+        exit(1); // Encerra o programa em caso de erro na abertura do arquivo
+    }
+}
+
+// Função para fechar o arquivo
+void closeLexerFile() {
+    if(inputFile.is_open()) {
+        inputFile.close();
+    }
+}
+
 // Função para a leitura do arquivo de entrada
-char readChar(void);
+char readChar() {
+    char c;
+    if(inputFile.get(c)) { // Lê um caractere do arquivo
+        return c;
+    } else {
+        return EOF; // Retorna EOF se atingir o fim do arquivo
+    }
+}
 
 // Função que implementa o autômato finito do analisador léxico
-t_token nextToken(void);
+t_token nextToken(void) {
+    while(isspace(nextChar)) {
+        nextChar = readChar();
+    }
+    if(isalpha(nextChar)) {
+        char text[MAX_ID_LEN + 1];
+        int i = 0;
+        do {
+            text[i++] = nextChar;
+            nextChar = readChar();
+        } while(isalnum(nextChar) || nextChar == '_');
+        text[i] = '\0';
+        token = searchKeyWord(text);
+        if(token == ID) {
+            token2nd = searchName(text);
+        }
+    }
+    return token;
+}
 
 int main() {
-    cout << searchName("test1") << endl;
-    cout << searchName("test2") << endl;
-    cout << searchName("test1") << endl;
+    openLexerFile("main.tbm");
+    while(nextChar) {
+        nextToken();
+    }
+    closeLexerFile();
+
     return 0;
 }
