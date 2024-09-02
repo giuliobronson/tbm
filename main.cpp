@@ -2,6 +2,8 @@
 #include<vector>
 #include<string>
 #include<iostream>
+#include<unordered_map>
+
 #define MAX_CONSTS 1000
 
 using namespace std;
@@ -42,21 +44,37 @@ char nextChar = '\x20';
 t_token token;
 int token2nd;
 
-// Função para inserir e buscar identificadores na tabela de nomes
-int searchName(string name) {
-    return 4;
-}
-
 // Função para verificar tabela de palavras-chave
 t_token searchKeyWord(string name) {
-    vector<string> keyWordTable = {
+    static vector<string> keyWordTable = {
         "alias", "bool", "break", "char", "continue", "do", "else", "false", 
         "function", "if", "int", "string", "struct", "true", "var", "while"
     };
+
+    // Verifica se a palavra existe na tabela de palavras-chave
     auto it = lower_bound(keyWordTable.begin(), keyWordTable.end(), name);
-    if(it != keyWordTable.end() && *it == name)
-        return (t_token)(searchName(name));
-    return ID;
+    if(it != keyWordTable.end() && *it == name) {
+        return (t_token)(it - keyWordTable.begin());
+    } else {
+        return ID;
+    }
+}
+
+// Função para inserir e buscar identificadores na tabela de nomes
+int searchName(string name) {
+    static unordered_map<string, int> identifierTable;
+    static int currentIndex = 0;
+
+    // Verifica se o identificador já está na tabela
+    auto it = identifierTable.find(name);
+    if (it != identifierTable.end()) {
+        // Retorna o token secundário já existente
+        return it->second;
+    } else {
+        // Adiciona um novo identificador na tabela com o próximo token secundário
+        identifierTable[name] = currentIndex;
+        return currentIndex++;
+    }
 }
 
 // Funções para inclusões de constantes de cada tipo. Retornam a posição em que foram inseridas
@@ -80,6 +98,8 @@ char readChar(void);
 t_token nextToken(void);
 
 int main() {
-    cout << searchKeyWord("do") << endl;
+    cout << searchName("test1") << endl;
+    cout << searchName("test2") << endl;
+    cout << searchName("test1") << endl;
     return 0;
 }
