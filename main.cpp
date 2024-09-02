@@ -24,18 +24,18 @@ typedef enum {
     UNKNOWN
 } t_token;
 
-// typedef struct {
-//     unsigned char type; // 0-char, 1-int, 2-string
-//     union {
-//         char cVal;
-//         int  nVal;
-//         string sVal;
-//     };
-// } t_const;
+typedef struct {
+    unsigned char type; // 0-char, 1-int, 2-string
+    union {
+        char cVal;
+        int nVal;
+        string sVal;
+    } _;
+} t_const;
 
-// // Vetor de constantes lidas
-// t_const vConsts[MAX_CONSTS];
-// int nNumConsts = 0;
+// Vetor de constantes lidas
+t_const vConsts[MAX_CONSTS];
+int nNumConsts = 0;
 
 // Caractere lido
 char nextChar = '\x20';
@@ -78,18 +78,60 @@ int searchName(string name) {
 }
 
 // Funções para inclusões de constantes de cada tipo. Retornam a posição em que foram inseridas
-int addCharConst(char c);
+int addCharConst(char c) {
+    if (nNumConsts >= MAX_CONSTS) {
+        cerr << "Erro: Excedido o limite máximo de constantes." << endl;
+        return -1; // Retorna -1 em caso de erro
+    }
+    vConsts[nNumConsts].type = 0; // 0 para char
+    vConsts[nNumConsts]._.cVal = c;
+    return nNumConsts++;
+}
 
-int addIntConst(int n);
+int addIntConst(int n) {
+    if (nNumConsts >= MAX_CONSTS) {
+        cerr << "Erro: Excedido o limite máximo de constantes." << endl;
+        return -1; // Retorna -1 em caso de erro
+    }
+    vConsts[nNumConsts].type = 1; // 1 para int
+    vConsts[nNumConsts]._.nVal = n;
+    return nNumConsts++;
+}
 
-int addStringConst(string s);
+int addStringConst(string s) {
+    if (nNumConsts >= MAX_CONSTS) {
+        cerr << "Erro: Excedido o limite máximo de constantes." << endl;
+        return -1; // Retorna -1 em caso de erro
+    }
+    vConsts[nNumConsts].type = 2; // 2 para string
+    vConsts[nNumConsts]._.sVal = s;
+    return nNumConsts++;
+}
 
 // Funções para a recuperação do valor de uma constante a partir de sua posição
-char getCharConst(int n);
+char getCharConst(int n) {
+    if (n > nNumConsts) {
+        cerr << "Erro: Excedido o número de constantes." << endl;
+        return -1; // Retorna -1 em caso de erro
+    }
+    return vConsts[n]._.cVal;
+}
 
-int getIntConst(int n);
+int getIntConst(int n) {
+    if (n > nNumConsts) {
+        cerr << "Erro: Excedido o número de constantes." << endl;
+        return -1; // Retorna -1 em caso de erro
+    }
+    return vConsts[n]._.nVal;
+}
 
-string getStringConst(int n);
+string getStringConst(int n) {
+    if (n > nNumConsts) {
+        cerr << "Erro: Excedido o número de constantes." << endl;
+        return ""; // Retorna -1 em caso de erro
+    }
+    return vConsts[n]._.sVal;
+}
 
 // Função para a leitura do arquivo de entrada
 char readChar(void);
