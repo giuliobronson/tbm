@@ -1,3 +1,8 @@
 var int x;
 x = 2;
 x = x + 4;
+var int y = x + 2;
+y += 45;
+while( y < 60 ) {
+    y++;
+}
