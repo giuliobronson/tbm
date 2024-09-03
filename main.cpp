@@ -30,7 +30,7 @@ typedef enum {
     // Símbolos
     COLON, SEMI_COLON, COMMA, EQUALS, LEFT_SQUARE, RIGHT_SQUARE, LEFT_BRACES, RIGHT_BRACES, LEFT_PARENTHESIS, 
     RIGHT_PARENTHESIS, AND, AND_EQUAL, OR, OR_EQUAL, LESS_THAN, GREATER_THAN, LESS_OR_EQUAL, GREATER_OR_EQUAL, NOT_EQUAL, EQUAL_EQUAL,
-    PLUS, PLUS_PLUS, PLUS_EQUAL, MINUS, MINUS_MINUS, MINUS_EQUAL, TIMES, TIMES_EQUAL, DIVIDE, DIVIDE_EQUAL, DOT, 
+    PLUS, PLUS_EQUAL, MINUS, MINUS_EQUAL, TIMES, TIMES_EQUAL, DIVIDE, DIVIDE_EQUAL, DOT, 
     NOT, XOR, XOR_EQUAL, MOD, MOD_EQUAL, BIT_AND, BIT_OR, BIT_SHIFT_LEFT, BIT_SHIFT_RIGHT,
 
     // Tokens Regulares
@@ -354,10 +354,7 @@ t_token nextToken(void) {
         case '+':
             token = PLUS;
             nextChar = readChar();
-            if( nextChar == '+' ) {
-                token = PLUS_PLUS;
-                nextChar = readChar();
-            } else if( nextChar == '=' ) {
+            if( nextChar == '=') {
                 token = PLUS_EQUAL;
                 nextChar = readChar();
             }
@@ -365,10 +362,7 @@ t_token nextToken(void) {
         case '-': 
             token = MINUS;
             nextChar = readChar();
-            if( nextChar == '-' ) {
-                token = MINUS_MINUS;
-                nextChar = readChar();
-            } else if( nextChar == '=' ) {
+            if( nextChar == '=' ) {
                 token = MINUS_EQUAL;
                 nextChar = readChar();
             }
