@@ -1,3 +1,3 @@
-# tbm
+# tbm - lexer
 
-Linguagem de programação criada para a disciplina de compiladores
+Analisador léxico da linguagem de programação criada para a disciplina de compiladores
