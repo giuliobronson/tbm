@@ -231,10 +231,6 @@ t_token nextToken(void) {
         do {
             numeral[i++] = nextChar;
             nextChar = readChar();
-            while( nextChar == '_' || nextChar == '\'' ) { // because we are 8_000 cool
-                nextChar = readChar();
-                continue;
-            }
         } while( isdigit( nextChar ) );
         numeral[i] = '\0';
         token = NUMERAL;
