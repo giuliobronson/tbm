@@ -1,15 +1,27 @@
-#include<algorithm>
-#include<vector>
-#include<cstring>
-#include<iostream>
-#include<fstream>
-#include<cctype>
-#include<unordered_map>
+#include <algorithm>
+#include <vector>
+#include <cstring>
+#include <iostream>
+#include <fstream>
+#include <cctype>
+#include <unordered_map>
 
 #define MAX_CONSTS 1000
 #define MAX_ID_LEN 50
+#define MAX_STR_LEN 250
+#define MAX_NUM_LEN 10
 
 using namespace std;
+
+// this is just temporary to test :)
+vector<string> inv_enum = {
+    "ALIAS", "BOOL", "BREAK", "CHAR", "CONTINUE", "DO", "ELSE", "FALSE", "FUNCTION", "IF", "INT", "STRING", "STRUCT", "TRUE", "VAR", "WHILE",
+    "COLON", "SEMI_COLON", "COMMA", "EQUALS", "LEFT_SQUARE", "RIGHT_SQUARE", "LEFT_BRACES", "RIGHT_BRACES", "LEFT_PARENTHESIS", 
+    "RIGHT_PARENTHESIS", "AND", "AND_EQUAL", "OR", "OR_EQUAL", "LESS_THAN", "GREATER_THAN", "LESS_OR_EQUAL", "GREATER_OR_EQUAL", "NOT_EQUAL", "EQUAL_EQUAL",
+    "PLUS", "PLUS_PLUS", "PLUS_EQUAL", "MINUS", "MINUS_MINUS", "MINUS_EQUAL", "TIMES", "TIMES_EQUAL", "DIVIDE", "DIVIDE_EQUAL", "DOT", 
+    "NOT", "XOR", "XOR_EQUAL", "MOD", "MOD_EQUAL", "BIT_AND", "BIT_OR", "BIT_SHIFT_LEFT", "BIT_SHIFT_RIGHT",
+    "CHARACTER", "NUMERAL", "STRINGVAL", "ID", "UNKNOWN"
+};
 
 typedef enum {
     // Palavras Reservadas
@@ -17,8 +29,9 @@ typedef enum {
 
     // Símbolos
     COLON, SEMI_COLON, COMMA, EQUALS, LEFT_SQUARE, RIGHT_SQUARE, LEFT_BRACES, RIGHT_BRACES, LEFT_PARENTHESIS, 
-    RIGHT_PARENTHESIS, AND, OR, LESS_THAN, GREATER_THAN, LESS_OR_EQUAL, GREATER_OR_EQUAL, NOT_EQUAL, EQUAL_EQUAL,
-    PLUS, MINUS, TIMES, DIVIDE, DOT, NOT,
+    RIGHT_PARENTHESIS, AND, AND_EQUAL, OR, OR_EQUAL, LESS_THAN, GREATER_THAN, LESS_OR_EQUAL, GREATER_OR_EQUAL, NOT_EQUAL, EQUAL_EQUAL,
+    PLUS, PLUS_PLUS, PLUS_EQUAL, MINUS, MINUS_MINUS, MINUS_EQUAL, TIMES, TIMES_EQUAL, DIVIDE, DIVIDE_EQUAL, DOT, 
+    NOT, XOR, XOR_EQUAL, MOD, MOD_EQUAL, BIT_AND, BIT_OR, BIT_SHIFT_LEFT, BIT_SHIFT_RIGHT,
 
     // Tokens Regulares
     CHARACTER, NUMERAL, STRINGVAL, ID,
@@ -41,6 +54,7 @@ t_const vConsts[MAX_CONSTS];
 int nNumConsts = 0;
 
 ifstream inputFile;
+ofstream outputFile;
 
 // Caractere lido
 char nextChar = '\x20';
@@ -80,6 +94,10 @@ int searchName(string name) {
         identifierTable[name] = currentIndex;
         return currentIndex++;
     }
+}
+
+bool isRegularToken(t_token token) {
+    return token >= CHARACTER && token <= ID;
 }
 
 // Funções para inclusões de constantes de cada tipo. Retornam a posição em que foram inseridas
@@ -154,6 +172,26 @@ void closeLexerFile() {
     }
 }
 
+void openOutputFile(const string& filename) {
+    outputFile.open(filename);
+    if(!outputFile) {
+        cerr << "Erro ao abrir o arquivo: " << filename << endl;
+        exit(1); // Encerra o programa em caso de erro na abertura do arquivo
+    }
+}
+
+void closeOutputFile() {
+    if(outputFile.is_open()) {
+        outputFile.close();
+    }
+}
+
+void writeToken(const t_token token) {
+    if(outputFile.is_open()) {
+        outputFile << inv_enum[token] << ", " << (isRegularToken(token) ? to_string(token2nd) : "") << ";" << endl;
+    }
+}
+
 // Função para a leitura do arquivo de entrada
 char readChar() {
     char c;
@@ -164,11 +202,17 @@ char readChar() {
     }
 }
 
+int t = 0;
 // Função que implementa o autômato finito do analisador léxico
 t_token nextToken(void) {
     while(isspace(nextChar)) {
         nextChar = readChar();
     }
+    t++;
+    if(t > 50) {
+        exit(1);
+    }
+    cout << nextChar;
     if(isalpha(nextChar)) {
         char text[MAX_ID_LEN + 1];
         int i = 0;
@@ -181,16 +225,213 @@ t_token nextToken(void) {
         if(token == ID) {
             token2nd = searchName(text);
         }
-    }
+    } else if( isdigit( nextChar ) ) {
+        char numeral[MAX_NUM_LEN + 1];
+        int i = 0;
+        do {
+            numeral[i++] = nextChar;
+            nextChar = readChar();
+            while( nextChar == '_' || nextChar == '\'' ) { // because we are 8_000 cool
+                nextChar = readChar();
+                continue;
+            }
+        } while( isdigit( nextChar ) );
+        numeral[i] = '\0';
+        token = NUMERAL;
+        int n = 0, j = 0;
+        while( numeral[j++] != '\0' )
+            n = n * 10 + numeral[j] - '0';
+        token2nd = addIntConst( n );
+    } else if( nextChar == '"' ) {
+        char string[ MAX_STR_LEN + 1 ];
+        int i = 1;
+        do {
+            string[ i++ ] = nextChar;
+            nextChar = readChar();
+        } while( nextChar != '"' );
+        string[ i++ ] = '"';
+        string[ i ] = '\0';
+        token = STRINGVAL;
+        token2nd = addStringConst( string );
+    } else switch( nextChar ) {
+        case ':':
+            token = COLON;
+            nextChar = readChar();
+            break;
+        case ';':
+            token = SEMI_COLON;
+            nextChar = readChar();
+            break;
+        case ',':
+            token = COMMA;
+            nextChar = readChar();
+            break;
+        case '=':
+            nextChar = readChar();
+            if( nextChar == '=' ) {
+                token = EQUAL_EQUAL;
+                nextChar = readChar();
+            } else {
+                token = EQUALS;
+            }
+            break;
+        case '[':
+            token = LEFT_SQUARE;
+            nextChar = readChar();
+            break;
+        case ']':
+            token = RIGHT_SQUARE;
+            nextChar = readChar();
+            break;
+        case '{':
+            token = LEFT_BRACES;
+            nextChar = readChar();
+            break;
+        case '}':
+            token = RIGHT_BRACES;
+            nextChar = readChar();
+            break;
+        case '(':
+            token = LEFT_PARENTHESIS;
+            nextChar = readChar();
+            break;
+        case ')':
+            token = RIGHT_PARENTHESIS;
+            nextChar = readChar();
+            break;
+        case '&':
+            token = BIT_AND;
+            nextChar = readChar();
+            if( nextChar == '&' ) {
+                token = AND;
+                nextChar = readChar();
+            } else if( nextChar == '=' ) {
+                token = AND_EQUAL;
+                nextChar = readChar();
+            }
+            break;
+        case '|':
+            token = BIT_OR;
+            nextChar = readChar();
+            if( nextChar == '|' ) {
+                token = OR;
+                nextChar = readChar();
+            } else if( nextChar == '=' ) {
+                token = OR_EQUAL;
+                nextChar = readChar();
+            }
+            break;
+        case '<':
+            token = LESS_THAN;
+            nextChar = readChar();
+            if( nextChar == '=' ) {
+                token = LESS_OR_EQUAL;
+                nextChar = readChar();
+            } else if( nextChar == '<' ) {
+                token = BIT_SHIFT_LEFT;
+                nextChar = readChar();
+            }
+            break;
+        case '>': 
+            token = GREATER_THAN;
+            nextChar = readChar();
+            if( nextChar == '=' ) {
+                token = GREATER_OR_EQUAL;
+                nextChar = readChar();
+            } else if( nextChar == '>' ) {
+                token = BIT_SHIFT_RIGHT;
+                nextChar = readChar();
+            }
+            break;
+        case '!':
+            token = NOT;
+            nextChar = readChar();
+            if( nextChar == '=' ) {
+                token = NOT_EQUAL;
+                nextChar = readChar();
+            }
+            break;
+        case '+':
+            token = PLUS;
+            nextChar = readChar();
+            if( nextChar == '+' ) {
+                token = PLUS_PLUS;
+                nextChar = readChar();
+            } else if( nextChar == '=' ) {
+                token = PLUS_EQUAL;
+                nextChar = readChar();
+            }
+            break;
+        case '-': 
+            token = MINUS;
+            nextChar = readChar();
+            if( nextChar == '-' ) {
+                token = MINUS_MINUS;
+                nextChar = readChar();
+            } else if( nextChar == '=' ) {
+                token = MINUS_EQUAL;
+                nextChar = readChar();
+            }
+            break;
+        case '*':
+            token = TIMES;
+            nextChar = readChar();
+            if( nextChar == '=' ) {
+                token = TIMES_EQUAL;
+                nextChar = readChar();
+            }
+            break;
+        case '/':   
+            token = DIVIDE;
+            nextChar = readChar();
+            if( nextChar == '=' ) {
+                token = DIVIDE_EQUAL;
+                nextChar = readChar();
+            }
+            break;
+        case '.':
+            token = DOT;
+            nextChar = readChar();
+            break;
+        case '\'':
+            nextChar = readChar();
+            token = CHARACTER;
+            token2nd = addCharConst(nextChar);
+            readChar();
+            nextChar = readChar();
+            break;
+        case '^':
+            token = XOR;
+            nextChar = readChar();
+            if( nextChar == '=' ) {
+                token = XOR_EQUAL;
+                nextChar = readChar();
+            }
+            break;
+        case '%':
+            token = MOD;
+            nextChar = readChar();
+            if( nextChar == '=' ) {
+                token = MOD_EQUAL;
+                nextChar = readChar();
+            }
+            break;
+        default:
+            token = UNKNOWN;
+            nextChar = readChar();
+            break;
+    } 
     return token;
 }
 
 int main() {
     openLexerFile("main.tbm");
-    while(nextChar) {
-        nextToken();
+    openOutputFile("output.txt");
+    while(nextChar != EOF) {
+        t_token token = nextToken();
+        writeToken(token);
     }
     closeLexerFile();
-
+    closeOutputFile();
     return 0;
 }
